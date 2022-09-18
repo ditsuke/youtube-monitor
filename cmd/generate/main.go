@@ -2,9 +2,11 @@ package main
 
 import (
 	"context"
+	"flag"
 	"github.com/ditsuke/youtube-focus/config"
 	"github.com/ditsuke/youtube-focus/internal/yt"
 	"github.com/ditsuke/youtube-focus/store"
+	_ "github.com/joho/godotenv/autoload"
 	"github.com/sethvargo/go-envconfig"
 	"gorm.io/gen"
 	"gorm.io/gorm"
@@ -17,6 +19,9 @@ func prepareDb(db *gorm.DB) error {
 }
 
 func main() {
+	noGen := flag.Bool("no-gen", false, "if true, the db is only prepared")
+	flag.Parse()
+
 	cfg := config.Config{}
 	if err := envconfig.Process(context.Background(), &cfg); err != nil {
 		log.Fatalln(err)
@@ -27,6 +32,13 @@ func main() {
 	// prepare table
 	if err := prepareDb(db); err != nil {
 		log.Fatalln(err)
+	}
+
+	log.Println("db prepared")
+
+	if *noGen {
+		log.Println("not generating code because of the -no-gen flag")
+		return
 	}
 
 	// generate model(s)
