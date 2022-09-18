@@ -8,10 +8,11 @@ import (
 )
 
 func getPaginationParams(query url.Values) (time.Time, int, error) {
-	marker, err := parseParam(query, ParamMarker, time.Now())
+	markerUnix, err := parseParam(query, ParamFrom, time.Now().Unix())
 	if err != nil {
-		return time.Time{}, 0, fmt.Errorf("invalid %s param", ParamMarker)
+		return time.Time{}, 0, fmt.Errorf("invalid %s param", ParamFrom)
 	}
+	from := time.Unix(markerUnix, 0)
 
 	limit, err := parseParam(query, ParamLimit, LimitDefault)
 	if err != nil {
@@ -23,10 +24,15 @@ func getPaginationParams(query url.Values) (time.Time, int, error) {
 		limit = LimitMax
 	}
 
-	return marker, limit, nil
+	return from, limit, nil
 }
 
-func parseParam[T int | time.Time | string](query url.Values, param string, def T) (T, error) {
+// parseParam is a generic function that parses typed parameters from a url.Values instance.
+// The second value is non-nil on failure to parse when the key exists.
+// If the key does not exist, it returns the def default value.
+func parseParam[T int | int64 | time.Time | string](query url.Values, param string, def T) (T,
+	error,
+) {
 	if !query.Has(param) {
 		return def, nil
 	}
@@ -41,6 +47,8 @@ func parseParam[T int | time.Time | string](query url.Values, param string, def 
 		*t, err = strconv.Atoi(v)
 	case *time.Time:
 		*t, err = time.Parse(QueryTimeFmt, v)
+	case *int64:
+		*t, err = strconv.ParseInt(v, 10, 64)
 	}
 
 	return ret, err

@@ -6,6 +6,7 @@ import (
 	"github.com/ditsuke/youtube-focus/internal/interfaces"
 	"github.com/ditsuke/youtube-focus/internal/yt"
 	"github.com/ditsuke/youtube-focus/model"
+	"github.com/rs/zerolog"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -34,7 +35,8 @@ func GetDB(dsn string) *gorm.DB {
 // VideoMetaStore is an abstraction layer for the video meta storage.
 // Includes methods to save, retrieve and search records (with pagination capabilities).
 type VideoMetaStore struct {
-	DB *gorm.DB
+	Logger zerolog.Logger
+	DB     *gorm.DB
 }
 
 // interface compliance constraint for VideoMetaStore
@@ -65,10 +67,14 @@ func (v *VideoMetaStore) Retrieve(publishedBefore time.Time, limit int) []yt.Vid
 	result := v.DB.
 		Order("published_at DESC").
 		Limit(limit).
-		Find(videos, "published_at <= ?", publishedBefore)
+		Find(videos, "published_at < ?", publishedBefore)
 
 	if result.Error != nil {
 		fmt.Println("error: ", result.Error)
+	}
+
+	if videos == nil {
+		return []yt.Video{}
 	}
 
 	return *videos
@@ -83,16 +89,18 @@ func (v *VideoMetaStore) Search(query string, publishedBefore time.Time, limit i
 	result := v.DB.
 		Order("published_at DESC").
 		Limit(limit).
-		Where("LOWER(title) LIKE LOWER(?)", "%"+query+"%").
-		Or("LOWER(description) LIKE LOWER(?)", "%"+query+"%").
-		Find(
-			videos,
-			"published_at <= ?", publishedBefore,
-		)
+		Where(v.DB.Where("LOWER(title) LIKE LOWER(?)",
+			"%"+query+"%").Or("LOWER(description) LIKE LOWER(?)", "%"+query+"%")).
+		Where("published_at <= ?", publishedBefore).
+		Find(videos)
 
-	// @todo replace with log + error return
+	// @todo could use an error return
 	if result.Error != nil {
-		fmt.Println("error: ", result.Error)
+		v.Logger.Error().Err(result.Error).Msg("video query")
+	}
+
+	if videos == nil {
+		return []yt.Video{}
 	}
 
 	return *videos

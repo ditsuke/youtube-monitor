@@ -29,6 +29,18 @@ func ErrInvalidRequest(err error) render.Renderer {
 
 type VideosResponse struct {
 	Videos []yt.Video `json:"videos"`
+	Next   int64      `json:"next"`
+}
+
+func NewVideosResponse(videos []yt.Video) *VideosResponse {
+	if len(videos) == 0 {
+		return &VideosResponse{Videos: videos}
+	}
+
+	return &VideosResponse{
+		Next:   videos[len(videos)-1].PublishedAt.Unix(),
+		Videos: videos,
+	}
 }
 
 func (v *VideosResponse) Render(w http.ResponseWriter, r *http.Request) error {

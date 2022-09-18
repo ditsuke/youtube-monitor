@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/ditsuke/youtube-focus/api/response"
 	"github.com/ditsuke/youtube-focus/store"
@@ -11,9 +10,9 @@ import (
 )
 
 const (
-	ParamMarker = "before"
-	ParamLimit  = "limit"
-	ParamQuery  = "q"
+	ParamFrom  = "from"
+	ParamLimit = "limit"
+	ParamQuery = "q"
 
 	LimitMax     = 20
 	LimitDefault = 10
@@ -44,10 +43,12 @@ func (c *VideoHandler) Get(w http.ResponseWriter, r *http.Request) {
 
 	videos := c.store.Retrieve(marker, limit)
 
-	j, _ := json.Marshal(videos)
-	_, _ = w.Write(j)
+	// j, _ := json.Marshal(videos)
+	// _, _ = w.Write(j)
+	_ = render.Render(w, r, response.NewVideosResponse(videos))
 }
 
+// Search handles requests with search queries
 func (c *VideoHandler) Search(w http.ResponseWriter, r *http.Request) {
 	qParams := r.URL.Query()
 	marker, limit, err := getPaginationParams(qParams)
@@ -65,7 +66,5 @@ func (c *VideoHandler) Search(w http.ResponseWriter, r *http.Request) {
 
 	videos := c.store.Search(s, marker, limit)
 
-	// _ = render.Render(w, r, videos)
-	j, _ := json.Marshal(videos)
-	_, _ = w.Write(j)
+	_ = render.Render(w, r, response.NewVideosResponse(videos))
 }
