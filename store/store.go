@@ -12,10 +12,6 @@ import (
 	"time"
 )
 
-func GetDSN(user, password, host, db string) string {
-	return fmt.Sprintf("user=%s password=%s host=%s dbname=%s", user, password, host, db)
-}
-
 func GetDSNFromConfig(cfg config.Config) string {
 	return fmt.Sprintf(
 		"user=%s password=%s port=%s host=%s dbname=%s",
@@ -62,14 +58,14 @@ func (v *VideoMetaStore) Save(records []yt.Video) {
 
 // Retrieve a maximum of limit videos published after some time.Time in reverse-chronological
 // order (ie: sorted by latest)
-// The publishedAfter param can be used for pagination -- by using the published_at
-// attribute of the last record in a result, get the next page.
-func (v *VideoMetaStore) Retrieve(publishedAfter time.Time, limit int) []yt.Video {
+// The publishedBefore param can be used for pagination -- by using the published_at
+// attribute of the last record in a result, get the next batch.
+func (v *VideoMetaStore) Retrieve(publishedBefore time.Time, limit int) []yt.Video {
 	videos := new([]yt.Video)
 	result := v.DB.
 		Order("published_at DESC").
 		Limit(limit).
-		Find(videos, "published_at >= ?", publishedAfter)
+		Find(videos, "published_at <= ?", publishedBefore)
 
 	if result.Error != nil {
 		fmt.Println("error: ", result.Error)
@@ -79,10 +75,10 @@ func (v *VideoMetaStore) Retrieve(publishedAfter time.Time, limit int) []yt.Vide
 }
 
 // Search videos in the store by title and description. Retrieves a maximum of limit videos
-// published after some time.Time
-// The publishedAfter param can be used for pagination -- by using the published_at
-// attribute of the last record in a result, get the next page.
-func (v *VideoMetaStore) Search(query string, publishedAfter time.Time, limit int) []yt.Video {
+// published before some time.Time, sorted by latest first (reverse chronological)
+// The publishedBefore param can be used for pagination -- by using the published_at
+// attribute of the last record in a result, get the next batch.
+func (v *VideoMetaStore) Search(query string, publishedBefore time.Time, limit int) []yt.Video {
 	videos := new([]yt.Video)
 	result := v.DB.
 		Order("published_at DESC").
@@ -91,7 +87,7 @@ func (v *VideoMetaStore) Search(query string, publishedAfter time.Time, limit in
 		Or("LOWER(description) LIKE LOWER(?)", "%"+query+"%").
 		Find(
 			videos,
-			"published_at >= ?", publishedAfter,
+			"published_at <= ?", publishedBefore,
 		)
 
 	// @todo replace with log + error return
