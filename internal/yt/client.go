@@ -41,15 +41,18 @@ func New(ctx context.Context, apiKey string, opts ...Opt) (*Client, error) {
 // QueryLatestVideos returns Video metas matching a query in reverse chronological order (ie: latest).
 // Query is capped at the default 5 items at the moment.
 func (c *Client) QueryLatestVideos(query string) ([]Video, error) {
-	r, err := c.service.Search.List([]string{"snippet"}).Type("video").Q(query).Order("date").Do()
+	r, err := c.service.Search.List([]string{"snippet"}).Type("video").Q(query).Order("date").PublishedAfter(time.Now().Add(-1 * 24 * time.Hour).Format(time.RFC3339)).Do()
 	if err != nil {
-		return nil, fmt.Errorf("list query: %+v", err)
+		apiError, ok := err.(*googleapi.Error)
+		if !ok {
+			return nil, fmt.Errorf("list query: %+v", err)
+		}
+		if apiError.Code == http.StatusForbidden {
+			// Invalid token or rate limit exceeded
+			// @todo token switching logic goes here ;)
+		}
+		return nil, fmt.Errorf("youtube: %+v", err)
 	}
-
-	// error? doc says "any non 2XX" so we might need to check more here
-	if r.HTTPStatusCode != http.StatusOK {
-	}
-	// More error handling based on status codes??
 
 	videos := make([]Video, len(r.Items))
 	for i, result := range r.Items {
