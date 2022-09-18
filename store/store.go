@@ -2,6 +2,9 @@ package store
 
 import (
 	"fmt"
+	"github.com/ditsuke/youtube-focus/config"
+	"github.com/ditsuke/youtube-focus/internal/interfaces"
+	"github.com/ditsuke/youtube-focus/internal/yt"
 	"github.com/ditsuke/youtube-focus/model"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -10,6 +13,15 @@ import (
 
 func GetDSN(user, password, host, db string) string {
 	return fmt.Sprintf("user=%s password=%s host=%s dbname=%s", user, password, host, db)
+}
+
+func GetDSNFromConfig(cfg config.Config) string {
+	return fmt.Sprintf(
+		"user=%s password=%s port=%s host=%s dbname=%s",
+		cfg.PostgresUser, cfg.PostgresPass,
+		cfg.PostgresPort, cfg.PostgresHost,
+		cfg.PostgresDB,
+	)
 }
 
 func GetDB(dsn string) *gorm.DB {
