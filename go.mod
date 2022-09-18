@@ -3,8 +3,10 @@ module github.com/ditsuke/youtube-focus
 go 1.19
 
 require (
+	github.com/go-chi/chi/v5 v5.0.7
 	github.com/joho/godotenv v1.4.0
 	github.com/rs/zerolog v1.28.0
+	github.com/sethvargo/go-envconfig v0.8.2
 	google.golang.org/api v0.96.0
 	gorm.io/driver/postgres v1.3.9
 	gorm.io/gen v0.3.16
@@ -13,12 +15,16 @@ require (
 
 require (
 	cloud.google.com/go/compute v1.7.0 // indirect
+	github.com/ajg/form v1.5.1 // indirect
+	github.com/go-chi/chi v1.5.4 // indirect
+	github.com/go-chi/render v1.0.2 // indirect
 	github.com/go-sql-driver/mysql v1.6.0 // indirect
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.1.0 // indirect
 	github.com/googleapis/gax-go/v2 v2.4.0 // indirect
+	github.com/ironstar-io/chizerolog v0.0.0-20190729084312-7eaca6bf60e6 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgconn v1.12.1 // indirect
 	github.com/jackc/pgio v1.0.0 // indirect
@@ -31,7 +37,6 @@ require (
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/mattn/go-colorable v0.1.12 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
-	github.com/sethvargo/go-envconfig v0.8.2 // indirect
 	go.opencensus.io v0.23.0 // indirect
 	golang.org/x/crypto v0.0.0-20220214200702-86341886e292 // indirect
 	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4 // indirect
