@@ -24,6 +24,7 @@ func (f *Fetcher[T]) Spawn(ctx context.Context, tx chan<- []T) {
 func (f *Fetcher[T]) Start(ctx context.Context, tx chan<- []T) {
 	ticker := time.NewTicker(f.Interval)
 
+loop:
 	for {
 		f.Logger.Debug().Msg("fetching...")
 		// spawn a goroutine to fetch and send records across the channel
@@ -35,9 +36,8 @@ func (f *Fetcher[T]) Start(ctx context.Context, tx chan<- []T) {
 			continue
 		case <-ctx.Done():
 			f.Logger.Debug().Str("reason", "context cancellation").Msg("stopping fetch service")
-			break
+			break loop
 		}
-		<-ticker.C
 	}
 }
 
