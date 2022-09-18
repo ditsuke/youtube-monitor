@@ -1,9 +1,9 @@
 package config
 
 type Config struct {
-	YouTubeAPIKey       string `env:"YOUTUBE_API_KEY"`
-	YouTubeVideoQuery   string `env:"YOUTUBE_VIDEO_QUERY"`
-	YouTubePollInterval int    `env:"YOUTUBE_POLL_INTERVAL"`
+	YouTubeAPIKeys      []string `env:"YOUTUBE_API_KEYS"`
+	YouTubeVideoQuery   string   `env:"YOUTUBE_VIDEO_QUERY"`
+	YouTubePollInterval int      `env:"YOUTUBE_POLL_INTERVAL"`
 
 	PostgresHost string `env:"PGHOST,default=localhost"`
 	PostgresPort string `env:"PGPORT,default=5432"`
