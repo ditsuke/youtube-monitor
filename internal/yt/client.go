@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/rs/zerolog"
+	"google.golang.org/api/googleapi"
 	"google.golang.org/api/option"
 	"google.golang.org/api/youtube/v3"
 	"net/http"
@@ -23,6 +24,8 @@ func WithLogger(logger zerolog.Logger) Opt {
 	}
 }
 
+// New returns a new instance of Client, returns a non-nil error if an error is returned by youtube.NewService
+// This function employs the options-pattern to configure the client in-situ.
 func New(ctx context.Context, apiKey string, opts ...Opt) (*Client, error) {
 	service, err := youtube.NewService(ctx, option.WithAPIKey(apiKey))
 	if err != nil {
@@ -35,7 +38,7 @@ func New(ctx context.Context, apiKey string, opts ...Opt) (*Client, error) {
 	return client, nil
 }
 
-// QueryLatestVideos returns video metas matching a query in reverse chronological order (ie: latest).
+// QueryLatestVideos returns Video metas matching a query in reverse chronological order (ie: latest).
 // Query is capped at the default 5 items at the moment.
 func (c *Client) QueryLatestVideos(query string) ([]Video, error) {
 	r, err := c.service.Search.List([]string{"snippet"}).Type("video").Q(query).Order("date").Do()

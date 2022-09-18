@@ -6,7 +6,6 @@ import (
 )
 
 type Video struct {
-	gorm.Model
 	VideoId      string `gorm:"unique;not null"`
 	Title        string
 	Description  string
@@ -14,6 +13,11 @@ type Video struct {
 	ThumbnailUrl string
 }
 
-func (Video) TableName() string {
+type VideoFull struct {
+	gorm.Model
+	Video
+}
+
+func (VideoFull) TableName() string {
 	return "videos"
 }
