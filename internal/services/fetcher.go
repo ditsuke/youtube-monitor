@@ -2,32 +2,32 @@ package services
 
 import (
 	"context"
-	"github.com/ditsuke/youtube-focus/internal/yt"
 	"github.com/rs/zerolog"
 	"time"
 )
 
-type Fetcher struct {
-	Logger   zerolog.Logger
-	Client   *yt.Client
-	Interval time.Duration
+type Fetcher[T any] struct {
+	Logger    zerolog.Logger
+	FetchFunc func() ([]T, error)
+	Interval  time.Duration
 }
 
 // Spawn kicks off the Fetcher service in a new goroutine. The context passed can be used for
 // cancellation.
-func (f *Fetcher) Spawn(ctx context.Context, query string, tx chan<- []yt.Video) {
+func (f *Fetcher[T]) Spawn(ctx context.Context, tx chan<- []T) {
 	go func() {
-		f.Start(ctx, query, tx)
+		f.Start(ctx, tx)
 	}()
 }
 
 // Start is like Spawn, but blocks the calling goroutine.
-func (f *Fetcher) Start(ctx context.Context, query string, tx chan<- []yt.Video) {
+func (f *Fetcher[T]) Start(ctx context.Context, tx chan<- []T) {
 	ticker := time.NewTicker(f.Interval)
 
 	for {
+		f.Logger.Debug().Msg("fetching...")
 		// spawn a goroutine to fetch and send records across the channel
-		go f.fetchAndSend(query, tx)
+		go f.fetchAndSend(tx)
 
 		// block until it's time for the next batch query or the context expires
 		select {
@@ -41,10 +41,10 @@ func (f *Fetcher) Start(ctx context.Context, query string, tx chan<- []yt.Video)
 	}
 }
 
-func (f *Fetcher) fetchAndSend(query string, tx chan<- []yt.Video) {
-	r, err := f.Client.QueryLatestVideos(query)
+func (f *Fetcher[T]) fetchAndSend(tx chan<- []T) {
+	r, err := f.FetchFunc()
 	if err != nil {
-		f.Logger.Warn().AnErr("query videos", err).Msg("")
+		f.Logger.Warn().AnErr("fetch items", err).Msg("")
 		return
 	}
 	tx <- r

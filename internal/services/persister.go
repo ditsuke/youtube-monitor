@@ -2,29 +2,28 @@ package services
 
 import (
 	"context"
-	"github.com/ditsuke/youtube-focus/internal/yt"
+	"github.com/ditsuke/youtube-focus/internal/interfaces"
 	"github.com/rs/zerolog"
-	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
+	"time"
 )
 
-type Persister struct {
+type Persister[T any] struct {
 	Logger zerolog.Logger
-	DB     *gorm.DB
+	Store  interfaces.Store[T, time.Time]
 }
 
 // Spawn kicks off the Persister service in a new goroutine.
 // Context expiration can be used to stop the service.
-func (p *Persister) Spawn(ctx context.Context, rx <-chan []yt.Video) {
+func (p *Persister[T]) Spawn(ctx context.Context, rx <-chan []T) {
 	go p.Start(ctx, rx)
 }
 
 // Start is like Spawn but blocks the calling goroutine.
-func (p *Persister) Start(ctx context.Context, rx <-chan []yt.Video) {
+func (p *Persister[T]) Start(ctx context.Context, rx <-chan []T) {
 	for {
 		select {
 		case records := <-rx:
-			p.DB.Clauses(clause.OnConflict{DoNothing: true}).Create(records)
+			p.Store.Save(records)
 		case <-ctx.Done():
 		}
 	}

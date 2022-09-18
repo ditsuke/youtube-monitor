@@ -15,7 +15,7 @@ import (
 // Args: query, fetch_interval
 // Env: YOUTUBE_API_KEY
 func main() {
-	flag.Bool("debug", false, "enable debug logging")
+	flag.Parse()
 
 	log := zerolog.New(zerolog.NewConsoleWriter())
 
@@ -35,20 +35,22 @@ func main() {
 
 	c := make(chan []yt.Video)
 
-	fetcher := services.Fetcher{
+	fetcher := services.Fetcher[yt.Video]{
 		Logger:   log.With().Str("comp", "fetcher").Logger(),
 		Interval: time.Second * 15,
-		Client:   client,
+		FetchFunc: func() ([]yt.Video, error) {
+			return client.QueryLatestVideos("minecraft")
+		},
 	}
 
-	persister := services.Persister{
+	persister := services.Persister[yt.Video]{
 		Logger: log.With().Str("comp", "persister").Logger(),
-		DB:     db,
+		Store:  &store.VideoMetaStore{DB: db},
 	}
 
 	ctx := context.Background()
 
-	fetcher.Spawn(ctx, "minecraft", c)
+	fetcher.Spawn(ctx, c)
 	persister.Spawn(ctx, c)
 
 	// let our services run for a couple minutes to test things out
