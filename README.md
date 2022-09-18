@@ -1,42 +1,30 @@
-# FamPay-Backend-Assignment
-Assignment for Backend Engineering Team Applications to FamPay
+# YouTube Focus
 
-# Project Goal
-To make an API to fetch latest videos sorted in reverse chronological order of their publishing date-time from YouTube for a given tag/search query in a paginated response.
+YouTube focus is a dockerized service to continuously collect, retrieve and search YouTube videos.
+It uses the YouTube Data API v3 to query and store videos in a PostgreSQL database, and then offers this data up
+through a REST API.
 
-# Basic Requirements:
-- Server should call the YouTube API continuously in background (async) with some interval (say 10 seconds) for fetching the latest videos for a predefined search query and should store the data of videos (specifically these fields - Video title, description, publishing datetime, thumbnails URLs and any other fields you require) in a database with proper indexes.
-- A GET API which returns the stored video data in a paginated response sorted in descending order of published datetime.
-- A basic search API to search the stored videos using their title and description.
-- Dockerize the project.
-- It should be scalable and optimised.
+## Get it running
 
-# Bonus Points:
-- Add support for supplying multiple API keys so that if quota is exhausted on one, it automatically uses the next available key.
-- Make a dashboard to view the stored videos with filters and sorting options (optional)
-- Optimise search api, so that it's able to search videos containing partial match for the search query in either video title or description.
-    - Ex 1: A video with title *`How to make tea?`* should match for the search query `tea how`
+### Prerequisites
 
-# Instructions:
-- You are free to choose any search query, for example: official, cricket, football etc. (choose something that has high frequency of video uploads)
-- Try and keep your commit messages clean, and leave comments explaining what you are doing wherever it makes sense.
-- Also try and use meaningful variable/function names, and maintain indentation and code style.
-- Submission should have a `README` file containing instructions to run the server and test the API.
-- Accepted language & Framework
-    1. Python (DRF, Django, Flask, etc)
-    2. GoLang
-    3. JavaScript
-- Send your submission (Git repository) link at hiring@fampay.in
+- Docker
+- Git
 
-# Reference:
-- YouTube data v3 API: [https://developers.google.com/youtube/v3/getting-started](https://developers.google.com/youtube/v3/getting-started)
-- Search API reference: [https://developers.google.com/youtube/v3/docs/search/list](https://developers.google.com/youtube/v3/docs/search/list)
-    - To fetch the latest videos you need to specify these: type=video, order=date, publishedAfter=<SOME_DATE_TIME>
-    - Without publishedAfter, it will give you cached results which will be too old
-    
+### Steps
 
-Feel free to ask any questions you have, anytime!
+1. Clone the repository
+2. Fill in the `.env` file with your YouTube API key. A `.env.sample` file is included for reference with relevant
+   environment variables.
+3. Spin up the `docker-compose` stack with `docker-compose up`
+4. Wait for the database to be initialized, and the API to get populated.
+5. The API is now available at `localhost:8080`
+6. Query the API on `http://localhost:8080/videos` or `http://localhost:8080/videos?search=your+search+query`
 
-**Callout:** At FamPay, we consider assignments extremely important as it helps us assess your skills and the authenticity of your work. So it goes without saying that we are *strictly* against plagiarism.
-
-We wish you all the  best!
+## Features
+- [x] Polls the YouTube API in background to retrieve new videos.
+- [x] REST API to query video data -- cycle through consistently with
+      publish-time based pagination.
+- [x] Multiple API keys, cycled through to avoid rate limits.
+- [x] One-step setup with Docker.
+- [ ] Advanced Search
