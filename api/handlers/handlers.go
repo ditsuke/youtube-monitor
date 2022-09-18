@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"github.com/ditsuke/youtube-focus/api/response"
 	"github.com/ditsuke/youtube-focus/store"
 	"github.com/go-chi/render"
@@ -10,9 +9,9 @@ import (
 )
 
 const (
-	ParamFrom  = "from"
-	ParamLimit = "limit"
-	ParamQuery = "q"
+	ParamFrom   = "from"
+	ParamLimit  = "limit"
+	ParamSearch = "search"
 
 	LimitMax     = 20
 	LimitDefault = 10
@@ -32,39 +31,22 @@ func New(svc store.VideoMetaStore) *VideoHandler {
 	}
 }
 
-// Get handles requests for
-func (c *VideoHandler) Get(w http.ResponseWriter, r *http.Request) {
-	query := r.URL.Query()
-	marker, limit, err := getPaginationParams(query)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte(err.Error()))
-	}
-
-	videos := c.store.Retrieve(marker, limit)
-
-	// j, _ := json.Marshal(videos)
-	// _, _ = w.Write(j)
-	_ = render.Render(w, r, response.NewVideosResponse(videos))
-}
-
-// Search handles requests with search queries
+// Search handles requests with search queries, or without.
 func (c *VideoHandler) Search(w http.ResponseWriter, r *http.Request) {
 	qParams := r.URL.Query()
-	marker, limit, err := getPaginationParams(qParams)
+	from, limit, err := getPaginationParams(qParams)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte(err.Error()))
+		_ = render.Render(w, r, response.ErrInvalidRequest(err))
 		return
 	}
 
-	s, _ := parseParam(qParams, ParamQuery, "")
+	s, _ := parseParam(qParams, ParamSearch, "")
 	if s == "" {
-		_ = render.Render(w, r, response.ErrInvalidRequest(fmt.Errorf("no search query")))
+		videos := c.store.Retrieve(from, limit)
+		_ = render.Render(w, r, response.NewVideosResponse(videos))
 		return
 	}
 
-	videos := c.store.Search(s, marker, limit)
-
+	videos := c.store.Search(s, from, limit)
 	_ = render.Render(w, r, response.NewVideosResponse(videos))
 }

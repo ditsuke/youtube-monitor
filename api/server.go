@@ -56,6 +56,5 @@ func (s *Server) StartServer(ctx context.Context) {
 func RegisterRoutes(cfg config.Config, m *chi.Mux) {
 	videoSvc := handlers.New(store.VideoMetaStore{DB: store.GetDB(store.GetDSNFromConfig(cfg))})
 
-	m.Get("/videos", videoSvc.Get)
-	m.Get("/videos/search", videoSvc.Search)
+	m.Get("/videos", videoSvc.Search)
 }
