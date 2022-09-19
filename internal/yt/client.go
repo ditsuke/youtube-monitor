@@ -13,13 +13,15 @@ import (
 	"time"
 )
 
+// Client is a wrapper around the YouTube Data API v3, with a method to fetch the latest videos
+// along with multi-token support to circumvent rate-limiting.
 type Client struct {
 	logger       zerolog.Logger
 	tokens       []string
 	muTokenState struct {
 		sync.Mutex
 		Ptr        int
-		lastFailed bool
+		lastWorked bool
 	}
 }
 
@@ -32,12 +34,13 @@ func WithLogger(logger zerolog.Logger) Opt {
 }
 
 // New returns a new instance of Client, returns a non-nil error if an error is returned by youtube.NewService
-// This function employs the options-pattern to configure the client in-situ.
+// This function employs the options pattern to configure the client in-situ.
 func New(apiKeys []string, opts ...Opt) (*Client, error) {
 	if len(apiKeys) == 0 {
 		return nil, errors.New("no api keys!")
 	}
 	client := &Client{tokens: apiKeys}
+	client.muTokenState.lastWorked = true
 	for _, opt := range opts {
 		opt(client)
 	}
@@ -60,9 +63,14 @@ func (c *Client) QueryLatestVideos(query string) ([]Video, error) {
 		}
 		if apiError.Code == http.StatusForbidden {
 			// Invalid token or rate limit exceeded
-			if ok := c.useNextToken(); ok {
+			c.logger.Warn().Int("apiKeyIndex", c.muTokenState.Ptr).Msg("current api key exhausted")
+			// @todo account for invalid api keys
+			if ok := c.useNextToken(false); ok {
 				return c.QueryLatestVideos(query)
 			}
+			err := fmt.Errorf("youtube tokens exhausted")
+			c.logger.Error().Err(err).Msg("exiting youtube poller")
+			return nil, err
 		}
 		return nil, fmt.Errorf("youtube: %+v", err)
 	}
@@ -79,6 +87,8 @@ func (c *Client) QueryLatestVideos(query string) ([]Video, error) {
 		}
 	}
 
+	// employ the round-robin strategy to cycle between tokens
+	c.useNextToken(true)
 	return videos, nil
 }
 
@@ -90,14 +100,15 @@ func (c *Client) getCurrentToken() string {
 }
 
 // useNextToken switches out the API token in-use by the client to bypass token-based rate limiting.
-func (c *Client) useNextToken() bool {
+func (c *Client) useNextToken(currentWorked bool) bool {
 	c.muTokenState.Lock()
 	defer c.muTokenState.Unlock()
-	c.logger.Warn().Int("apiKeyIndex", c.muTokenState.Ptr).Msg("current api key exhausted")
-	if c.muTokenState.lastFailed {
+	if !c.muTokenState.lastWorked && !currentWorked {
 		c.logger.Error().Msg("last api token failed too. consider adding more tokens")
 		return false
 	}
 	c.muTokenState.Ptr = (c.muTokenState.Ptr + 1) % len(c.tokens)
+	c.muTokenState.lastWorked = false
+	c.logger.Debug().Int("index", c.muTokenState.Ptr).Msg("switching youtube api token")
 	return true
 }
