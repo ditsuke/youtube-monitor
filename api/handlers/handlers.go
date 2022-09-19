@@ -10,13 +10,24 @@ import (
 )
 
 const (
-	ParamFrom   = "from"
-	ParamLimit  = "limit"
+	// ParamFrom is the query parameter used for pagination.
+	// The response.VideosResponse.Next property of a response yields the next page.
+	ParamFrom = "from"
+
+	// ParamLimit is the query parameter used to limit results in a response.
+	ParamLimit = "limit"
+
+	// ParamSearch is the query parameter used to search through records.
+	// The param is used in both the /videos and /videos_search endpoints.
 	ParamSearch = "search"
 
-	LimitMax     = 20
+	// LimitMax is the maximum value of ParamLimit, beyond which is it capped
+	LimitMax = 20
+
+	// LimitDefault is the default limit of results in a response.
 	LimitDefault = 10
 
+	// QueryTimeFmt is the accepted format of time values in URL queries.
 	QueryTimeFmt = time.RFC3339
 )
 

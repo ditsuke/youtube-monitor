@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-const GracefulShutdownDeadline = 15 * time.Second
+const gracefulShutdownDeadline = 15 * time.Second
 
 type Server struct {
 	Cfg    config.Config
@@ -48,7 +48,7 @@ func (s *Server) StartServer(ctx context.Context) {
 	// Block until the context expires
 	<-ctx.Done()
 	shutdownCtx, shutdownCtxCancel := context.WithTimeout(context.Background(),
-		GracefulShutdownDeadline)
+		gracefulShutdownDeadline)
 	defer shutdownCtxCancel()
 
 	// Attempt to gracefully shut the server down
