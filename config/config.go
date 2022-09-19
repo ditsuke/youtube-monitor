@@ -1,8 +1,14 @@
 package config
 
+import (
+	"fmt"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+)
+
 type Config struct {
 	YouTubeAPIKeys      []string `env:"YOUTUBE_API_KEYS"`
-	YouTubeVideoQuery   string   `env:"YOUTUBE_VIDEO_QUERY"`
+	YouTubeVideoQuery   string   `env:"YOUTUBE_VIDEO_QUERY,default=game"`
 	YouTubePollInterval int      `env:"YOUTUBE_POLL_INTERVAL"`
 
 	PostgresHost string `env:"PGHOST,default=localhost"`
@@ -13,4 +19,17 @@ type Config struct {
 
 	ServerPort string `env:"PORT,default=8080"`
 	ServerHost string `env:"HOST,default=localhost"`
+}
+
+func (c Config) GetDB() (*gorm.DB, error) {
+	return gorm.Open(postgres.Open(c.GetDSN()))
+}
+
+func (c Config) GetDSN() string {
+	return fmt.Sprintf(
+		"user=%s password=%s port=%s host=%s dbname=%s",
+		c.PostgresUser, c.PostgresPass,
+		c.PostgresPort, c.PostgresHost,
+		c.PostgresDB,
+	)
 }

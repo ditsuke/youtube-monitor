@@ -37,7 +37,11 @@ func main() {
 		logger.Fatal().Err(err).Msg("youtube client initialization")
 	}
 
-	videoStore := &store.VideoMetaStore{DB: store.GetDB(store.GetDSNFromConfig(cfg))}
+	db, err := cfg.GetDB()
+	if err != nil {
+		logger.Fatal().Err(err).Str("operation", "db-connect").Msg("failed")
+	}
+	videoStore := &store.VideoMetaStore{DB: db}
 
 	ctx, ctxCancel := context.WithCancel(context.Background())
 	defer ctxCancel()

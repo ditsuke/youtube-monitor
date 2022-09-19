@@ -5,7 +5,6 @@ import (
 	"flag"
 	"github.com/ditsuke/youtube-focus/config"
 	"github.com/ditsuke/youtube-focus/internal/yt"
-	"github.com/ditsuke/youtube-focus/store"
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/sethvargo/go-envconfig"
 	"gorm.io/gen"
@@ -13,8 +12,11 @@ import (
 	"log"
 )
 
+const TSVIndexQuery = `CREATE INDEX IF NOT EXISTS ts_idx ON videos USING GIN (tsv)`
+
 // prepareDb prepares a postgres store with the req table
 func prepareDb(db *gorm.DB) error {
+	db.Exec(TSVIndexQuery)
 	return db.AutoMigrate(yt.VideoFull{})
 }
 
@@ -27,7 +29,10 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	db := store.GetDB(store.GetDSNFromConfig(cfg))
+	db, err := cfg.GetDB()
+	if err != nil {
+		panic(err)
+	}
 
 	// prepare table
 	if err := prepareDb(db); err != nil {
@@ -42,8 +47,9 @@ func main() {
 	}
 
 	// generate model(s)
-	g := gen.NewGenerator(gen.Config{OutPath: "model"})
+	g := gen.NewGenerator(gen.Config{OutPath: "model", FieldCoverable: true})
 	g.UseDB(db)
 	g.GenerateAllTable()
 	g.Execute()
+	log.Println("models generated")
 }

@@ -2,35 +2,14 @@ package store
 
 import (
 	"fmt"
-	"github.com/ditsuke/youtube-focus/config"
 	"github.com/ditsuke/youtube-focus/internal/interfaces"
 	"github.com/ditsuke/youtube-focus/internal/yt"
-	"github.com/ditsuke/youtube-focus/model"
 	"github.com/rs/zerolog"
-	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+	"strings"
 	"time"
 )
-
-func GetDSNFromConfig(cfg config.Config) string {
-	return fmt.Sprintf(
-		"user=%s password=%s port=%s host=%s dbname=%s",
-		cfg.PostgresUser, cfg.PostgresPass,
-		cfg.PostgresPort, cfg.PostgresHost,
-		cfg.PostgresDB,
-	)
-}
-
-func GetDB(dsn string) *gorm.DB {
-	db, err := gorm.Open(postgres.Open(dsn))
-	if err != nil {
-		// @todo log + propogate
-		return nil
-	}
-
-	return db
-}
 
 // VideoMetaStore is an abstraction layer for the video meta storage.
 // Includes methods to save, retrieve and search records (with pagination capabilities).
@@ -42,20 +21,11 @@ type VideoMetaStore struct {
 // interface compliance constraint for VideoMetaStore
 var _ interfaces.Store[yt.Video, time.Time] = &VideoMetaStore{}
 
+const OrderReverseChrono = "published_at DESC"
+
 // Save records to the video store.
 func (v *VideoMetaStore) Save(records []yt.Video) {
-	models := make([]model.Video, len(records))
-	for i, r := range records {
-		models[i] = model.Video{
-			Title:        r.Title,
-			Description:  r.Description,
-			VideoID:      r.VideoId,
-			PublishedAt:  r.PublishedAt,
-			ThumbnailURL: r.ThumbnailUrl,
-		}
-	}
-
-	v.DB.Clauses(clause.OnConflict{DoNothing: true}).Create(models)
+	v.DB.Clauses(clause.OnConflict{DoNothing: true}).Create(records)
 }
 
 // Retrieve a maximum of limit videos published after some time.Time in reverse-chronological
@@ -65,7 +35,7 @@ func (v *VideoMetaStore) Save(records []yt.Video) {
 func (v *VideoMetaStore) Retrieve(publishedBefore time.Time, limit int) []yt.Video {
 	videos := new([]yt.Video)
 	result := v.DB.
-		Order("published_at DESC").
+		Order(OrderReverseChrono).
 		Limit(limit).
 		Find(videos, "published_at < ?", publishedBefore)
 
@@ -87,7 +57,7 @@ func (v *VideoMetaStore) Retrieve(publishedBefore time.Time, limit int) []yt.Vid
 func (v *VideoMetaStore) Search(query string, publishedBefore time.Time, limit int) []yt.Video {
 	videos := new([]yt.Video)
 	result := v.DB.
-		Order("published_at DESC").
+		Order(OrderReverseChrono).
 		Limit(limit).
 		Where(v.DB.Where("LOWER(title) LIKE LOWER(?)",
 			"%"+query+"%").Or("LOWER(description) LIKE LOWER(?)", "%"+query+"%")).
@@ -97,6 +67,29 @@ func (v *VideoMetaStore) Search(query string, publishedBefore time.Time, limit i
 	// @todo could use an error return
 	if result.Error != nil {
 		v.Logger.Error().Err(result.Error).Msg("video query")
+	}
+
+	if videos == nil {
+		return []yt.Video{}
+	}
+
+	return *videos
+}
+
+// NaturalSearch searches videos with a special natural-language aware operation, retrieving
+// a maximum of limit videos. This method does not support pagination at the moment.
+func (v *VideoMetaStore) NaturalSearch(query string, limit int) []yt.Video {
+	nlQuery := strings.Join(strings.Split(query, " "), "|")
+
+	videos := new([]yt.Video)
+	result := v.DB.
+		Order(OrderReverseChrono).
+		Limit(limit).
+		Where("tsv @@ to_tsquery('english', ?)", nlQuery).
+		Find(videos)
+
+	if result.Error != nil {
+		v.Logger.Error().Err(result.Error).Msg("natural language query for videos")
 	}
 
 	if videos == nil {

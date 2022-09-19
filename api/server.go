@@ -27,7 +27,11 @@ func (s *Server) StartServer(ctx context.Context) {
 
 	r.Use(render.SetContentType(render.ContentTypeJSON))
 	r.Use(chizerolog.LoggerMiddleware(&routeLogger))
-	RegisterRoutes(s.Cfg, r)
+
+	// Register routes or panic
+	if err := RegisterRoutes(s.Cfg, r); err != nil {
+		s.Logger.Fatal().Err(err).Str("op", "register routes").Msg("")
+	}
 
 	server := http.Server{
 		Addr:    net.JoinHostPort(s.Cfg.ServerHost, s.Cfg.ServerPort),
@@ -53,8 +57,14 @@ func (s *Server) StartServer(ctx context.Context) {
 	}
 }
 
-func RegisterRoutes(cfg config.Config, m *chi.Mux) {
-	videoSvc := handlers.New(store.VideoMetaStore{DB: store.GetDB(store.GetDSNFromConfig(cfg))})
+func RegisterRoutes(cfg config.Config, m *chi.Mux) error {
+	db, err := cfg.GetDB()
+	if err != nil {
+		return err
+	}
+	videoSvc := handlers.New(store.VideoMetaStore{DB: db})
 
 	m.Get("/videos", videoSvc.Search)
+	m.Get("/videos_search", videoSvc.AdvancedSearch)
+	return nil
 }

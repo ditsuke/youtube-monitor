@@ -20,6 +20,10 @@ through a REST API.
 4. Wait for the database to be initialized, and the API to get populated.
 5. The API is now available at `localhost:8080`
 6. Query the API on `http://localhost:8080/videos` or `http://localhost:8080/videos?search=your+search+query`
+7. Pagination is handled with the "next" key in responses. Plug them into the `from` query parameter of
+   subsequent requests to get the next page of results.
+8. Advanced natural language search is offered on the `/videos_search` route at the moment.
+   Query with `http://localhost:8080/videos_search?q=your+search+query`
 
 ## Features
 - [x] Polls the YouTube API in background to retrieve new videos.
@@ -27,4 +31,4 @@ through a REST API.
       publish-time based pagination.
 - [x] Multiple API keys, cycled through to avoid rate limits.
 - [x] One-step setup with Docker.
-- [ ] Advanced Search
+- [x] Advanced Search

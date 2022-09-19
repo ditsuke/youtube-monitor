@@ -23,6 +23,9 @@ type Video struct {
 	Description  string         `gorm:"column:description" json:"description"`
 	PublishedAt  time.Time      `gorm:"column:published_at" json:"published_at"`
 	ThumbnailURL string         `gorm:"column:thumbnail_url" json:"thumbnail_url"`
+	// @todo: the `default` gorm tag here is hand-edited. factor this into the codegen process, maybe with sed/awk?
+	// alternatively and better yet, make a PR to gorm/gen to add generated-column detection so it can auto-do the `default:(-)`
+	Tsv string `gorm:"<-;column:tsv;default(-);" json:"tsv"`
 }
 
 // TableName Video's table name

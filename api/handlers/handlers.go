@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"github.com/ditsuke/youtube-focus/api/response"
 	"github.com/ditsuke/youtube-focus/store"
 	"github.com/go-chi/render"
@@ -48,5 +49,24 @@ func (c *VideoHandler) Search(w http.ResponseWriter, r *http.Request) {
 	}
 
 	videos := c.store.Search(s, from, limit)
+	_ = render.Render(w, r, response.NewVideosResponse(videos))
+}
+
+// AdvancedSearch handles natural-language search queries
+func (c *VideoHandler) AdvancedSearch(w http.ResponseWriter, r *http.Request) {
+	qParams := r.URL.Query()
+	_, limit, err := getPaginationParams(qParams)
+	if err != nil {
+		_ = render.Render(w, r, response.ErrInvalidRequest(err))
+	}
+
+	s, _ := parseParam(qParams, ParamSearch, "")
+	if s == "" {
+		_ = render.Render(w, r,
+			response.ErrInvalidRequest(fmt.Errorf("no `search` parameter in query")))
+		return
+	}
+
+	videos := c.store.NaturalSearch(s, limit)
 	_ = render.Render(w, r, response.NewVideosResponse(videos))
 }
