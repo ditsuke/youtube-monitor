@@ -16,8 +16,12 @@ const TSVIndexQuery = `CREATE INDEX IF NOT EXISTS ts_idx ON videos USING GIN (ts
 
 // prepareDb prepares a postgres store with the req table
 func prepareDb(db *gorm.DB) error {
+	if err := db.AutoMigrate(yt.VideoFull{}); err != nil {
+		return err
+	}
+
 	db.Exec(TSVIndexQuery)
-	return db.AutoMigrate(yt.VideoFull{})
+	return nil
 }
 
 func main() {
