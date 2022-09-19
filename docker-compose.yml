@@ -5,6 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    restart: always
     depends_on:
       - db
     ports:
@@ -15,6 +16,7 @@ services:
 
   db:
     image: postgres:12-alpine
+    restart: always
     ports:
       - "5432:5432"
     volumes:
