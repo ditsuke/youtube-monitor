@@ -9,7 +9,7 @@ import (
 type Config struct {
 	YouTubeAPIKeys      []string `env:"YOUTUBE_API_KEYS"`
 	YouTubeVideoQuery   string   `env:"YOUTUBE_VIDEO_QUERY,default=game"`
-	YouTubePollInterval int      `env:"YOUTUBE_POLL_INTERVAL"`
+	YouTubePollInterval int      `env:"YOUTUBE_POLL_INTERVAL,default=20"`
 
 	PostgresHost string `env:"PGHOST,default=localhost"`
 	PostgresPort string `env:"PGPORT,default=5432"`
